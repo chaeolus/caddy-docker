@@ -85,3 +85,40 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: caddy-builds
+          path: dist
+
+      - name: Delete existing latest release (if any)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --yes || true
+          git push --delete origin latest || true
+
+      - name: Create GitHub Release and upload binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Caddy Custom Build (latest)
+          body: |
+            Automated Caddy build with:
+            - cloudflare DNS
+            - layer4
+            - webdav
+            - naive forwardproxy
+
+            Built from commit: ${{ github.sha }}
+          files: |
+            dist/caddy_amd64
+            dist/caddy_arm64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

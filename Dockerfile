@@ -4,6 +4,8 @@ ARG TARGETARCH
 
 COPY caddy_${TARGETARCH} /usr/bin/caddy
 
+RUN chmod +x /usr/bin/caddy
+
 ENTRYPOINT ["/usr/bin/caddy"]
 
 CMD ["run", "--config", "/etc/caddy/Caddyfile"]

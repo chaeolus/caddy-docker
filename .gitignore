@@ -1,0 +1,31 @@
+# Build artifacts
+caddy_*
+*.exe
+
+# Docker
+.dockerignore
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Go files
+go.mod
+go.sum
+dist/
+build/

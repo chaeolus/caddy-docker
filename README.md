@@ -8,7 +8,6 @@ This repository provides automated build workflows for Caddy web server with cus
 - 🐳 Multi-architecture Docker images (amd64, arm64)
 - Pre-configured with popular plugins:
   - Cloudflare DNS provider
-  - Caddy L4 (TCP/UDP proxy)
   - WebDAV support
   - Forward proxy with Naive implementation
 
@@ -41,7 +40,6 @@ chmod +x caddy_linux_amd64
 ## Plugins Included
 
 - `github.com/caddy-dns/cloudflare` - Cloudflare DNS provider for automatic HTTPS
-- `github.com/mholt/caddy-l4` - Layer 4 TCP/UDP proxy support
 - `github.com/mholt/caddy-webdav` - WebDAV support for file sharing
 - `github.com/klzgrad/forwardproxy@naive` - Forward proxy with Naive implementation
 

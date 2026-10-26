@@ -18,63 +18,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Check out Naive forwardproxy
-        uses: actions/checkout@v4
-        with:
-          repository: klzgrad/forwardproxy
-          ref: naive
-          path: .forwardproxy
-
-      - name: Read compatible Caddy version
-        run: printf 'CADDY_VERSION=%s\n' "$(<.forwardproxy/CADDY_VERSION)" >> "$GITHUB_ENV"
-
-      - name: Check out compatible Caddy
-        uses: actions/checkout@v4
-        with:
-          repository: caddyserver/caddy
-          ref: ${{ env.CADDY_VERSION }}
-          path: .caddy
-
-      - name: Apply upstream Caddy patches
-        run: |
-          git -C .caddy apply \
-            "$GITHUB_WORKSPACE/.forwardproxy/caddy-sing-quic-bbrv1.patch" \
-            "$GITHUB_WORKSPACE/.forwardproxy/caddy-read-idle-timeout.patch"
+      - uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: '1.26.x'
-          cache: true
-          cache-dependency-path: |
-            .caddy/go.sum
-            .forwardproxy/go.sum
-
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y curl
-
-      - name: Install xcaddy
-        run: go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+          cache: false
 
       - name: Build Caddy binaries
         run: |
-          for arch in amd64 arm64; do
-            env CGO_ENABLED=0 GOOS=linux GOARCH=${arch} xcaddy build "$CADDY_VERSION" \
-              --replace "github.com/caddyserver/caddy/v2=$GITHUB_WORKSPACE/.caddy" \
-              --with github.com/caddy-dns/cloudflare \
-              --with github.com/mholt/caddy-webdav \
-              --with "github.com/caddyserver/forwardproxy=$GITHUB_WORKSPACE/.forwardproxy" \
-              --output caddy_${arch}
-          done
+          bash ./build.sh
           ./caddy_amd64 version
           ./caddy_amd64 list-modules --skip-standard
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: caddy-builds
           path: caddy_*
@@ -85,26 +44,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: caddy-builds
           path: .
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push multi-arch Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -120,7 +79,7 @@ jobs:
 
     steps:
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: caddy-builds
           path: dist
@@ -133,7 +92,7 @@ jobs:
           git push --delete origin latest || true
 
       - name: Create GitHub Release and upload binaries
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: latest
           name: Caddy Custom Build (latest)

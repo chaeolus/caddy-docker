@@ -79,7 +79,7 @@ Manual builds and GitHub Actions use the same `build.sh` script:
 
 The idle-timeout patch supplies the `caddyhttp.IdleTimeoutsFromContext` API required by the current plugin. Using the plugin with unpatched Caddy can fail to compile with an undefined-function error. The Caddy version and patches are taken from the same plugin checkout to keep them compatible; see the [upstream build workflow](https://github.com/klzgrad/forwardproxy/blob/naive/.github/workflows/build.yml).
 
-GitHub Actions runs this script with Go 1.26, checks the amd64 binary's version and module list, uploads both binaries, and publishes the multi-architecture Docker image and GitHub Release. The workflow's JavaScript actions use Node.js 24.
+GitHub Actions pins the `build`, `docker`, and `release` jobs to Ubuntu 26.04 (`runs-on: ubuntu-26.04`). The workflow runs this script with Go 1.26, checks the amd64 binary's version and module list, uploads both binaries, and publishes the multi-architecture Docker image and GitHub Release. The workflow's JavaScript actions use Node.js 24.
 
 ## Plugins Included
 

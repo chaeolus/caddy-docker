@@ -20,11 +20,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check out Naive forwardproxy
+        uses: actions/checkout@v4
+        with:
+          repository: klzgrad/forwardproxy
+          ref: naive
+          path: .forwardproxy
+
+      - name: Read compatible Caddy version
+        run: printf 'CADDY_VERSION=%s\n' "$(<.forwardproxy/CADDY_VERSION)" >> "$GITHUB_ENV"
+
+      - name: Check out compatible Caddy
+        uses: actions/checkout@v4
+        with:
+          repository: caddyserver/caddy
+          ref: ${{ env.CADDY_VERSION }}
+          path: .caddy
+
+      - name: Apply upstream Caddy patches
+        run: |
+          git -C .caddy apply \
+            "$GITHUB_WORKSPACE/.forwardproxy/caddy-sing-quic-bbrv1.patch" \
+            "$GITHUB_WORKSPACE/.forwardproxy/caddy-read-idle-timeout.patch"
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25.5'
+          go-version: '1.26.x'
           cache: true
+          cache-dependency-path: |
+            .caddy/go.sum
+            .forwardproxy/go.sum
 
       - name: Install build dependencies
         run: |
@@ -37,12 +63,15 @@ jobs:
       - name: Build Caddy binaries
         run: |
           for arch in amd64 arm64; do
-            env GOOS=linux GOARCH=${arch} xcaddy build latest \
+            env CGO_ENABLED=0 GOOS=linux GOARCH=${arch} xcaddy build "$CADDY_VERSION" \
+              --replace "github.com/caddyserver/caddy/v2=$GITHUB_WORKSPACE/.caddy" \
               --with github.com/caddy-dns/cloudflare \
               --with github.com/mholt/caddy-webdav \
-              --with github.com/caddyserver/forwardproxy@caddy2=github.com/klzgrad/forwardproxy@naive \
+              --with "github.com/caddyserver/forwardproxy=$GITHUB_WORKSPACE/.forwardproxy" \
               --output caddy_${arch}
           done
+          ./caddy_amd64 version
+          ./caddy_amd64 list-modules --skip-standard
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
